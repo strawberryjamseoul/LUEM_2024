@@ -1,0 +1,443 @@
+---
+title: "Estimating Flood Inundation Probability Map"
+author: "Lu Yii Wong & Yujin Song"
+date: "2024-03-22"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    code_folding: hide
+editor_options: 
+  chunk_output_type: console
+---
+
+# Setup
+```{r setup, warning = FALSE, include=FALSE, message = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(caret)
+library(pscl)
+library(plotROC)
+library(pROC)
+library(sf)
+library(tidyverse)
+library(knitr)
+library(kableExtra)
+library(tigris)
+library(viridis)
+library(ggplot2)
+```
+
+```{r themes}
+mapTheme <- theme(plot.title =element_text(size=12),
+                  plot.subtitle = element_text(size=8),
+                  plot.caption = element_text(size = 6),
+                  axis.line=element_blank(),
+                  axis.text.x=element_blank(),
+                  axis.text.y=element_blank(),
+                  axis.ticks=element_blank(),
+                  axis.title.x=element_blank(),
+                  axis.title.y=element_blank(),
+                  panel.background=element_blank(),
+                  panel.border=element_blank(),
+                  panel.grid.major=element_line(colour = 'transparent'),
+                  panel.grid.minor=element_blank(),
+                  legend.direction = "vertical", 
+                  legend.position = "right",
+                  plot.margin = margin(1, 1, 1, 1, 'cm'),
+                  legend.key.height = unit(1, "cm"), legend.key.width = unit(0.2, "cm"))
+
+plotTheme <- theme(
+  plot.title =element_text(size=12),
+  plot.subtitle = element_text(size=8),
+  plot.caption = element_text(size = 6),
+  axis.text.x = element_text(size = 10, angle = 45, hjust = 1),
+  axis.text.y = element_text(size = 10),
+  axis.title.y = element_text(size = 10),
+  # Set the entire chart region to blank
+  panel.background=element_blank(),
+  plot.background=element_blank(),
+  #panel.border=element_rect(colour="#F0F0F0"),
+  # Format the grid
+  panel.grid.major=element_line(colour="#D0D0D0",size=.75),
+  axis.ticks=element_blank())
+
+```
+
+## Load data
+```{r load data}
+# dependent variable
+inundation <- read.csv("https://raw.githubusercontent.com/luyiiw/LUEM/main/calgary_table/zonal_depe.csv")
+
+# independent variables
+elevation <- read.csv("https://raw.githubusercontent.com/luyiiw/LUEM/main/calgary_table/zonal_elev.csv")
+
+flow_acc <- read.csv("https://raw.githubusercontent.com/luyiiw/LUEM/main/calgary_table/zonal_fac.csv")
+
+land_use <- read.csv("https://raw.githubusercontent.com/luyiiw/LUEM/main/calgary_table/zonal_lulc.csv")
+
+slope <- read.csv("https://raw.githubusercontent.com/luyiiw/LUEM/main/calgary_table/zonal_slope.csv")
+
+water_body <- read.csv("https://raw.githubusercontent.com/luyiiw/LUEM/main/calgary_table/zonal_water.csv")
+
+```
+
+## Fishnet and Joining
+```{r Fishnet}
+
+calgary_fishnet<-st_read("https://raw.githubusercontent.com/luyiiw/LUEM/main/Calgary_JSON/Calgary_Fishnet.json")
+calgary_boundary<-st_read("https://raw.githubusercontent.com/luyiiw/LUEM/main/Calgary_JSON/Calgary_Boundary.json")
+
+calgary_Floods <- calgary_fishnet %>% 
+  left_join(inundation, by = "FID")
+
+calgary_Floods$RANGE<-as.factor(calgary_Floods$RANGE)
+
+ggplot() + 
+  geom_sf(data=calgary_fishnet,color="grey",size=0.2) +
+  geom_sf(data=calgary_Floods ,aes(fill=RANGE),size=0.5) +
+   scale_fill_manual(values = c("1"= "#e31a1c", "0" = "#bdbdbd"),
+                     labels = c("1" = "Inundation", "0" = "No Inundation"),
+                  name = "Inundation Status") +
+  labs(title="Past Flood Inundation in Calgary, Canada")+
+  mapTheme+
+    guides(fill = guide_legend(override.aes = list(shape = 22, size = 6)))
+
+
+ggplot() + 
+  geom_sf(data=calgary_fishnet,color="grey",size=0.2) +
+  geom_sf(data=calgary_Floods ,aes(fill=RANGE),size=0.5) +
+   scale_fill_manual(values = c("1"= "#1f78b4", "0" = "#b2df8a"),
+                     labels = c("1" = "Inundation", "0" = "No Inundation"),
+                  name = "Inundation Status") +
+  labs(title="Past Flood Inundation in Calgary, Canada")+
+  mapTheme+
+    guides(fill = guide_legend(override.aes = list(shape = 22, size = 6)))
+
+ggplot() + 
+  geom_sf(data=calgary_fishnet,color="grey",size=0.2) +
+  geom_sf(data=calgary_Floods ,aes(fill=RANGE),size=0.5) +
+   scale_fill_manual(values = c("1"= "#1f78b4", "0" = "#e7f5c6"),
+                     labels = c("1" = "Inundation", "0" = "No Inundation"),
+                  name = "Inundation Status") +
+  labs(title="Past Flood Inundation in Calgary, Canada")+
+  mapTheme+
+    guides(fill = guide_legend(override.aes = list(shape = 22, size = 6)))
+
+```
+# Exploratory Analysis
+```{r}
+# Creating tables to combine exploratory data
+flood_dep <- inundation %>%
+  select(FID, RANGE) %>%
+  rename(flood = RANGE) %>%
+  mutate(flood = factor(flood))
+
+# 1 = flood, 0 = no flood
+
+#1 Elevation
+elev_comb <- elevation %>%
+  select(FID, MEAN) %>%
+  rename(mean_elev= MEAN)
+
+#2 Slope
+slope_comb <- slope %>%
+  select(FID, MAX) %>%
+  rename(max_slope= MAX)
+
+#3 Water body
+water_comb <- water_body %>%
+  select(FID, MIN) %>%
+  rename(min_dist_water= MIN)
+
+#4 Flow accumulation
+fac_comb <-  flow_acc %>%
+  select(FID, MEAN) %>%
+  rename(mean_fac= MEAN)
+#changed from max to mean
+
+#5 Land Use/Permeability
+lu_comb <- land_use %>%
+  select(FID, MEAN) %>%
+  rename(land_use = MEAN) %>%
+  mutate(permeability = case_when(
+    land_use < 0.25 ~ '0',
+    land_use >= 0.25 ~ '1')) %>%
+  select(-land_use)
+
+# Removing unnecessary data sets
+rm(inundation, elevation, flow_acc, land_use, slope, water_body)
+```
+
+## Plotting Variables
+```{r}
+# Combining the tables (think of another way to do this) consider merge?
+flood_comb <- flood_dep %>%
+  inner_join(elev_comb, by = "FID") %>%
+  inner_join(slope_comb, by = "FID") %>%
+  inner_join(water_comb, by = "FID") %>%
+  inner_join(fac_comb, by = "FID")
+
+floodPlotVariables <- 
+  flood_comb %>%
+  as.data.frame() %>%
+  select(flood, mean_elev, max_slope, min_dist_water, mean_fac) %>%
+  gather(variable, value, -flood)
+
+```
+
+```{r plot_variables}
+# need to check the labels for flood and not flood 
+ggplot(floodPlotVariables %>%
+         group_by(flood, variable) %>%
+         summarize(mean = mean(value))) + 
+     geom_bar(aes(as.factor(flood), 
+                  mean, 
+                  fill=as.factor(flood)),
+              stat="identity") + 
+     facet_wrap(~variable, scales = "free_y") +
+     scale_fill_manual(values = c("dark green", "dark blue"),
+                      labels = c("No Flood","Flood"),
+                      name = "") +
+    labs(x="Flood", y="Value") 
+
+rm(flood_comb)
+```
+
+
+# Model Building 
+## Partition Training and Test Sets
+```{r}
+# Combine all data sets for model building
+model_data <- flood_dep %>%
+  inner_join(elev_comb, by = "FID") %>%
+  inner_join(slope_comb, by = "FID") %>%
+  inner_join(water_comb, by = "FID") %>%
+  inner_join(fac_comb, by = "FID") %>%
+  inner_join(lu_comb, by = "FID") %>%
+  mutate(permeability = as.factor(permeability))
+
+#land cover is dummy var and categorical var
+
+
+# Creating training and test sets
+set.seed(3456)
+trainIndex <- createDataPartition(model_data$permeability, p = .70,
+                                  list = FALSE,
+                                  times = 1)
+
+floodTrain <- model_data[ trainIndex,]
+floodTest  <- model_data[-trainIndex,]
+
+```
+
+
+## Making the Binomial Model
+```{r}
+floodModel <- glm(flood ~ ., 
+                    family="binomial"(link="logit"), data = floodTrain %>%
+                                                            as.data.frame() %>%
+                                                            select(-FID))
+summary(floodModel)
+```
+
+## Model Validation
+```{r}
+classProbs <- predict(floodModel, floodTest, type="response")
+hist(classProbs)
+
+testProbs <- data.frame(obs = as.factor(floodTest$flood),
+                        pred = classProbs)
+
+ggplot(testProbs, aes(x = pred, fill=as.factor(obs))) + 
+  geom_density() +
+  facet_grid(obs ~ .) + 
+  xlab("Probability") +
+  ylab("Frequency")+
+  geom_vline(xintercept = .5) +
+  scale_fill_manual(values = c("dark blue", "dark green"),
+                      labels = c("Not Flood","Flood"),
+                      name = "")+
+  plotTheme
+```
+
+## Confusion Matrix
+```{r}
+testProbs$predClass  = ifelse(testProbs$pred > .5 ,1,0)
+
+caret::confusionMatrix(reference = as.factor(testProbs$obs), 
+                       data = as.factor(testProbs$predClass), 
+                       positive = "1")
+```
+
+Predicted = 0, Observed = 0 —> True Negative (No flood correctly predicted 128)
+
+Predicted = 1, Observed = 1 —> True Positive (Floods correctly predicted 42)
+
+Predicted = 1, Observed = 0 —> False Positive (Incorrectly predicted flood when there was no flood 13)
+
+Predicted = 0, Observed = 1 —> False Negative (Incorrectly predicted no flood when there was a flood 20)
+
+
+## ROC Curve
+
+```{r roc_curve, message = FALSE, warning = FALSE}
+# change obs to numeric
+testProbs$obs <- as.numeric(as.character(testProbs$obs))
+
+# plot results
+ggplot(testProbs, aes(d = obs, m = pred)) + 
+  geom_roc(n.cuts = 50, labels = FALSE) + 
+  style_roc(theme = theme_grey) +
+  geom_abline(slope = 1, intercept = 0, size = 1.5, color = 'grey') +
+  plotTheme
+
+#area under the curve
+auc(testProbs$obs, testProbs$pred)
+```
+
+## Cross-validation
+```{r}
+ctrl <- trainControl(method = "cv", 
+                     number = 100, 
+                     p = 0.7, 
+                     savePredictions = TRUE)
+
+cvFit <- train(as.factor(flood) ~ .,  data = model_data %>% 
+                                                as.data.frame(), 
+               method="glm", family="binomial",
+               trControl = ctrl)
+
+cvFit
+
+ggplot(as.data.frame(cvFit$resample), aes(Accuracy)) + 
+  geom_histogram() +
+  scale_x_continuous(limits = c(0, 1)) +
+  labs(x="Accuracy",
+       y="Count")+
+  plotTheme
+```
+
+## Cross-validation
+```{r}
+###Refine here by yujin
+allPredictions <- 
+  predict(cvFit, flood, type="prob")[,2]
+  
+finalflood <- 
+  cbind(flood,allPredictions) %>%
+  mutate(allPredictions = round(allPredictions * 100)) 
+
+finalflood
+
+class(finalflood)
+table(finalflood)
+
+library(dplyr)
+library(sf)
+
+joined_fishnet <- calgary_fishnet %>% 
+  left_join(finalflood, by = "OBJECTID")
+
+ggplot() + 
+    geom_sf(data=joined_fishnet, aes(fill=factor(ntile(allPredictions,5))), 
+            colour=NA) +
+    scale_fill_manual(values = c("#edf8fb","#b3cde3","#8c96c6","#8856a7","#810f7c"),
+                      labels=as.character(quantile(joined_fishnet$allPredictions,
+                                                 c(0.1,.2,.4,.6,.8),
+                                                 na.rm=T)),
+                      name="Predicted\nProbabilities(%)\n(Quintile\nBreaks)") +
+  mapTheme +
+  labs(title="")
+
+
+ggplot() + 
+    geom_sf(data=joined_fishnet, aes(fill=factor(ntile(allPredictions,5))), 
+            colour=NA) +
+    scale_fill_manual(values = c("#edf8fb","#b3cde3","#8c96c6","#8856a7","#810f7c"),
+                      labels=as.character(quantile(joined_fishnet$allPredictions,
+                                                 c(0.1,.2,.4,.6,.8),
+                                                 na.rm=T)),
+                      name="Predicted\nProbabilities(%)\n(Quintile\nBreaks)") +
+  geom_sf(data=joined_fishnet  %>% 
+               filter(flood == 1), 
+               fill="red",colour=NA) +
+  mapTheme +
+  labs(title="Predicted Probabilities and Past Flood",
+       subtitle="Calgary; Past Flood in red")
+
+
+trainPredictions <- 
+  predict(cvFit, finalTrain, type="prob")[,2]
+
+```
+
+
+# APPLY MODEL TO DENVER
+## Load Data
+```{r load data for Denver}
+# independent variables
+elevation_den <- read.csv("https://raw.githubusercontent.com/luyiiw/LUEM/main/denver_table/Zonal_elevation_den.csv")
+
+flow_acc_den <- read.csv("https://raw.githubusercontent.com/luyiiw/LUEM/main/denver_table/Zonal_fac_den.csv")
+
+land_use_den <- read.csv("https://raw.githubusercontent.com/luyiiw/LUEM/main/denver_table/Zonal_permea_den.csv")
+
+slope_den <- read.csv("https://raw.githubusercontent.com/luyiiw/LUEM/main/denver_table/Zonal_slope_den.csv")
+
+water_body_den <- read.csv("https://raw.githubusercontent.com/luyiiw/LUEM/main/denver_table/Zonal_waterdist_den.csv")
+
+```
+
+## Denver data cleaning
+```{r}
+#1 Elevation
+elev_comb_den <- elevation_den %>%
+  select(OBJECTID, MEAN) %>%
+  rename(mean_elev= MEAN)
+
+#2 Slope
+slope_comb_den <- slope_den %>%
+  select(OBJECTID, MAX) %>%
+  rename(max_slope= MAX)
+
+#3 Water body
+water_comb_den <- water_body_den %>%
+  select(OBJECTID, MIN) %>%
+  rename(min_dist_water= MIN)
+
+#4 Flow accumulation
+fac_comb_den <-  flow_acc_den %>%
+  select(OBJECTID, MEAN) %>%
+  rename(mean_fac= MEAN)
+#changed from max to mean
+
+#5 Land Use/Permeability
+lu_comb_den <- land_use_den %>%
+  select(OBJECTID, MEAN) %>%
+  rename(land_use = MEAN) %>%
+  mutate(permeability = case_when(
+    land_use < 0.25 ~ '0',
+    land_use >= 0.25 ~ '1')) %>%
+  select(-land_use)
+
+```
+
+## Model Building Denver
+```{r}
+# Combine all data sets for DENVER model building
+model_data_den <- elev_comb_den %>%
+  inner_join(slope_comb_den, by = "OBJECTID") %>%
+  inner_join(water_comb_den, by = "OBJECTID") %>%
+  inner_join(fac_comb_den, by = "OBJECTID") %>%
+  inner_join(lu_comb_den, by = "OBJECTID") %>%
+  mutate(permeability = as.factor(permeability))
+```
+
+## Predicting Flood in Denver
+```{r}
+den_classProbs <- predict(floodModel, model_data_den, type = "response")
+
+den_floodModel <- cbind(model_data_den, den_classProbs)
+```
+
