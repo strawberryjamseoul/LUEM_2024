@@ -26,6 +26,7 @@ library(kableExtra)
 library(tigris)
 library(viridis)
 library(ggplot2)
+library(dplyr)
 ```
 
 ```{r themes}
@@ -266,6 +267,9 @@ Predicted = 1, Observed = 0 —> False Positive (Incorrectly predicted flood whe
 
 Predicted = 0, Observed = 1 —> False Negative (Incorrectly predicted no flood when there was a flood 10)
 
+Sensitivity: 0.63
+Specificity: 0.92
+
 
 ## ROC Curve
 
@@ -278,13 +282,16 @@ ggplot(testProbs, aes(d = obs, m = pred)) +
   geom_roc(n.cuts = 50, labels = FALSE) + 
   style_roc(theme = theme_grey) +
   geom_abline(slope = 1, intercept = 0, size = 1.5, color = 'grey') +
+  labs(title="ROC Curve",
+       caption = "Figure 3.3") +
   plotTheme
 
 #area under the curve
 auc(testProbs$obs, testProbs$pred)
 ```
+Area under the curve: 0.85
 
-## Cross-validation
+## Cross-Validation
 ```{r}
 ctrl <- trainControl(method = "cv", 
                      number = 100, 
@@ -299,33 +306,30 @@ cvFit <- train(as.factor(flood) ~ .,  data = model_data %>%
 cvFit
 
 ggplot(as.data.frame(cvFit$resample), aes(Accuracy)) + 
-  geom_histogram() +
+  geom_histogram(fill = "#1f78b4", color = "black") +
   scale_x_continuous(limits = c(0, 1)) +
   labs(x="Accuracy",
-       y="Count")+
+       y="Count") +
+  labs(title="Cross-Validation",
+       caption = "Figure 3.4")+
   plotTheme
+
 ```
+Accuracy: 0.86
+Kappa: 0.63
 
 ## Cross-validation
 ```{r}
 ###Refine here by yujin
 allPredictions <- 
-  predict(cvFit, flood, type="prob")[,2]
+  predict(cvFit, model_data, type="prob")[,2]
   
 finalflood <- 
-  cbind(flood,allPredictions) %>%
+  cbind(model_data,allPredictions) %>%
   mutate(allPredictions = round(allPredictions * 100)) 
 
-finalflood
-
-class(finalflood)
-table(finalflood)
-
-library(dplyr)
-library(sf)
-
 joined_fishnet <- calgary_fishnet %>% 
-  left_join(finalflood, by = "OBJECTID")
+  left_join(finalflood, by = "FID")
 
 ggplot() + 
     geom_sf(data=joined_fishnet, aes(fill=factor(ntile(allPredictions,5))), 
@@ -336,7 +340,8 @@ ggplot() +
                                                  na.rm=T)),
                       name="Predicted\nProbabilities(%)\n(Quintile\nBreaks)") +
   mapTheme +
-  labs(title="")
+  labs(title="Predicted Probability of Flood Risk in Calgary",
+       caption = "Figure 4.1")
 
 
 ggplot() + 
@@ -352,11 +357,12 @@ ggplot() +
                fill="red",colour=NA) +
   mapTheme +
   labs(title="Predicted Probabilities and Past Flood",
-       subtitle="Calgary; Past Flood in red")
+       subtitle="Calgary; Past Flood in red",
+       caption = "Figure 4.2")
 
 
-trainPredictions <- 
-  predict(cvFit, finalTrain, type="prob")[,2]
+#trainPredictions <- 
+ # predict(cvFit, finalTrain, type="prob")[,2]
 
 ```
 
