@@ -387,28 +387,28 @@ water_body_den <- read.csv("https://raw.githubusercontent.com/luyiiw/LUEM/main/d
 ```{r}
 #1 Elevation
 elev_comb_den <- elevation_den %>%
-  select(OBJECTID, MEAN) %>%
+  select(FID, MEAN) %>%
   rename(mean_elev= MEAN)
 
 #2 Slope
 slope_comb_den <- slope_den %>%
-  select(OBJECTID, MAX) %>%
+  select(FID, MAX) %>%
   rename(max_slope= MAX)
 
 #3 Water body
 water_comb_den <- water_body_den %>%
-  select(OBJECTID, MIN) %>%
+  select(FID, MIN) %>%
   rename(min_dist_water= MIN)
 
 #4 Flow accumulation
 fac_comb_den <-  flow_acc_den %>%
-  select(OBJECTID, MEAN) %>%
+  select(FID, MEAN) %>%
   rename(mean_fac= MEAN)
 #changed from max to mean
 
 #5 Land Use/Permeability
 lu_comb_den <- land_use_den %>%
-  select(OBJECTID, MEAN) %>%
+  select(FID, MEAN) %>%
   rename(land_use = MEAN) %>%
   mutate(permeability = case_when(
     land_use < 0.25 ~ '0',
@@ -421,11 +421,14 @@ lu_comb_den <- land_use_den %>%
 ```{r}
 # Combine all data sets for DENVER model building
 model_data_den <- elev_comb_den %>%
-  inner_join(slope_comb_den, by = "OBJECTID") %>%
-  inner_join(water_comb_den, by = "OBJECTID") %>%
-  inner_join(fac_comb_den, by = "OBJECTID") %>%
-  inner_join(lu_comb_den, by = "OBJECTID") %>%
+  inner_join(slope_comb_den, by = "FID") %>%
+  inner_join(water_comb_den, by = "FID") %>%
+  inner_join(fac_comb_den, by = "FID") %>%
+  inner_join(lu_comb_den, by = "FID") %>%
   mutate(permeability = as.factor(permeability))
+
+# Removing unnecessary data sets 
+rm(elev_comb_den, slope_comb_den, water_comb_den, fac_comb_den, lu_comb_den)
 ```
 
 ## Predicting Flood in Denver
