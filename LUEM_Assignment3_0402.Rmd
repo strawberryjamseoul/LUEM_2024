@@ -11,7 +11,7 @@ editor_options:
   chunk_output_type: console
 ---
 
-# Setup
+# 1: Setup
 ```{r setup, warning = FALSE, include=FALSE, message = FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
@@ -65,7 +65,7 @@ plotTheme <- theme(
 
 ```
 
-## Load data
+## 1.1: Load Data
 ```{r load data}
 # dependent variable
 inundation <- read.csv("https://raw.githubusercontent.com/luyiiw/LUEM/main/calgary_table/zonal_depe.csv")
@@ -83,8 +83,8 @@ water_body <- read.csv("https://raw.githubusercontent.com/luyiiw/LUEM/main/calga
 
 ```
 
-# Exploratory Analysis
-## Fishnet and Joining to show Past Flood Inundation
+# 2: Exploratory Analysis
+## 2.1: Fishnet and Joining to show Past Flood Inundation
 ```{r Fishnet}
 
 calgary_fishnet<-st_read("https://raw.githubusercontent.com/luyiiw/LUEM/main/Calgary_JSON/Calgary_Fishnet.json")
@@ -108,7 +108,7 @@ ggplot() +
 
 ```
 
-## Data Exploration
+## 2.2: Data Exploration
 ```{r}
 # Creating tables to combine exploratory data
 flood_dep <- inundation %>%
@@ -150,10 +150,7 @@ lu_comb <- land_use %>%
 
 # Removing unnecessary data sets
 rm(inundation, elevation, flow_acc, land_use, slope, water_body)
-```
 
-## Plotting Variables
-```{r}
 # Combining the tables 
 flood_comb <- flood_dep %>%
   inner_join(elev_comb, by = "FID") %>%
