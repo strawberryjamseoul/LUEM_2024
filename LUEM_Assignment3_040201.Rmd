@@ -232,7 +232,7 @@ ggplot(floodPlotVariables %>%
 
 ```
 
-# 3: Model Building 
+# 3: Model Building and Validation
 ## 3.1: Partition Training and Test Sets
 
 ```{r}
@@ -329,15 +329,18 @@ ggplot(testProbs, aes(d = obs, m = pred)) +
   style_roc(theme = theme_grey) +
   geom_abline(slope = 1, intercept = 0, size = 1.5, color = 'grey') +
   labs(title="ROC Curve",
-       caption = "Figure 3.3") +
+       caption = "Figure 3.2") +
   plotTheme
 
 #area under the curve
 auc(testProbs$obs, testProbs$pred)
 ```
-Area under the curve: 0.85
 
-## 3.6: k-Fold Cross-Validation
+The Receiver Operating Characteristic curve plots the true positive fraction against the false positive fraction. This plot shows the trade-offs between false positives and negatives and the model's goodness of fit. Since the ROC Curve (Figure 3.2) lies above the diagonal axis, the model predicts significantly better than a coin flip, making it a useful model.
+
+Additionally, the area under the ROC Curve is 0.85. This signifies that the model effectively distinguishes between positive and negative cases. Moreover, the high area under the curve suggests that the model performs well, with strong and accurate predictive power.  
+
+## 3.6: Cross-Validation
 
 ```{r cross_validation}
 ctrl <- trainControl(method = "cv", 
@@ -357,15 +360,15 @@ ggplot(as.data.frame(cvFit$resample), aes(Accuracy)) +
   scale_x_continuous(limits = c(0, 1)) +
   labs(x="Accuracy",
        y="Count") +
-  labs(title="Cross-Validation",
-       caption = "Figure 3.4")+
+  labs(title="100-Fold Cross-Validation",
+       caption = "Figure 3.3")+
   plotTheme
 
 ```
-Accuracy: 0.86
-Kappa: 0.63
 
-## 3.7: Goodness-of-Fit
+Another way to test the model is using k-fold validation. Here, we used 100-fold cross-validation to test the generalized linear model. This test shows that the model performed with an average accuracy rate of approximately 86% across all folds. The Cohen’s Kappa statistic is 0.63, suggesting moderate agreement between observed and predicted values. The high accuracy and moderate Kappa statistic suggest that the model performs well overall. Figure 3.2 supports this conclusion. While the model generally has high accuracy, it still struggles to predict some cases correctly.
+
+# 4: Plotting Outcomes for Calgary
 
 ```{r}
 allPredictions <- 
@@ -378,6 +381,11 @@ finalflood <-
 joined_fishnet_cal <- calgary_fishnet %>% 
   left_join(finalflood, by = "FID")
 
+```
+
+Using our model, we predicted the probability of flood inundation in Calgary. Figure 4.1 depicts the probability of a flood occurring in a given grid cell by quintile. 
+
+```{r}
 ggplot() + 
     geom_sf(data=joined_fishnet_cal, aes(fill=factor(ntile(allPredictions,5))), 
             colour=NA) +  # Raster layer
@@ -388,10 +396,14 @@ ggplot() +
                                                  na.rm=T)),
                       name="Predicted\nProbabilities(%)\n(Quintile\nBreaks)") +
   mapTheme +
-  labs(title="Predicted Probability of Flood Inundation in Calgary, Canada")
+  labs(title="Predicted Probability of Flood Inundation in Calgary, Canada",
+       caption = "Figure 4.1")
 
+```
 
+Figure 4.2 shows an overlay of past flood events over the future probability of a flood occurring. A visual trend from the map is that past flood events correlate highly to predicted future flood events.  
 
+``` {r}
 ggplot() + 
     geom_sf(data=joined_fishnet_cal, aes(fill=factor(ntile(allPredictions,5))), 
             colour=NA) +
@@ -406,9 +418,11 @@ ggplot() +
   geom_sf(data = calgary_fishnet, color = "grey", fill = NA) + 
   mapTheme +
   labs(title="Predicted Probabilities and Past Flood Inundation",
-       subtitle="Calgary; Past Flood Inundation in red")
+       subtitle="Calgary; Past Flood Inundation in red",
+       caption = "Figure 4.2")
+```
 
-
+```{r}
 ##Confusion Matrix Map
 joined_fishnet_cal %>%
   mutate(confResult=case_when(allPredictions < 50 & flood==0 ~ "True Negative",
@@ -420,13 +434,18 @@ joined_fishnet_cal %>%
    geom_sf(data = calgary_fishnet, color = "grey", fill = NA) +
   scale_fill_manual(values = c("Red","Orange","Light Blue","Light Green"),
                     name="Outcomes")+
-  labs(title="Confusion Matrix Map") +
+  labs(title="Confusion Matrix Map",
+       caption = "Figure 4.3") +
   mapTheme
 ```
 
+```{r}
+# Insert final flood inundation map for Calgary
 
-# 4: Applying the Model to Denver, Colorado 
-## 4.1: Load Data Denver
+```
+
+# 5: Applying the Model to Denver, Colorado 
+## 5.1: Load Data Denver
 ```{r load_data_den}
 # independent variables
 elevation_den <- read.csv("https://raw.githubusercontent.com/luyiiw/LUEM/main/denver_table/Zonal_elevation_den.csv")
@@ -441,7 +460,7 @@ water_body_den <- read.csv("https://raw.githubusercontent.com/luyiiw/LUEM/main/d
 
 ```
 
-## 4.2: Data Cleaning Denver
+## 5.2: Data Cleaning Denver
 ```{r data_cleaning_den}
 #1 Elevation
 elev_comb_den <- elevation_den %>%
@@ -475,7 +494,7 @@ lu_comb_den <- land_use_den %>%
 
 ```
 
-## 4.3: Model Building Denver
+## 5.3: Model Building Denver
 ```{r}
 # Combine all data sets for DENVER model building
 model_data_den <- elev_comb_den %>%
@@ -489,7 +508,7 @@ model_data_den <- elev_comb_den %>%
 rm(elev_comb_den, slope_comb_den, water_comb_den, fac_comb_den, lu_comb_den)
 ```
 
-## 4.4: Predicting Flood in Denver
+## 5.4: Predicting Flood in Denver
 ```{r}
 den_classProbs <- predict(floodModel, model_data_den, type = "response")
 
@@ -553,8 +572,6 @@ ggplot() +
     ) +
     labs(title = "Predicted Probability of Flood Inundation in Denver, Colorado") +
   mapTheme
-  # Or any other theme or customization you prefer
-
 
 ```
 
