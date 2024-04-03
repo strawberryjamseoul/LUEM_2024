@@ -42,7 +42,7 @@ library(viridis)
 library(ggplot2)
 ```
 
-```{r themes}
+```{r themes, warning = FALSE, include=FALSE, message = FALSE}
 mapTheme <- theme(plot.title =element_text(size=12),
                   plot.subtitle = element_text(size=8),
                   plot.caption = element_text(size = 6),
@@ -78,22 +78,21 @@ plotTheme <- theme(
 
 ```
 
-## 1.1: Load Data
+## 1.4: Load Data
 
 ```{r load data}
 # dependent variable
-inundation <- read.csv("https://raw.githubusercontent.com/strawberryjamseoul/LUEM_2024/main/Calgary_Table/zonal_depe.csv")
-
+inundation <- read.csv("C:\\Users\\USER\\Desktop\\LandUseModeling\\Assignment3\\Calgary\\table\\zonal_depe.csv")
 # independent variables
-elevation <- read.csv("https://raw.githubusercontent.com/strawberryjamseoul/LUEM_2024/main/Calgary_Table/zonal_elev.csv")
+elevation <- read.csv("C:\\Users\\USER\\Desktop\\LandUseModeling\\Assignment3\\Calgary\\table\\zonal_elev.csv")
 
-flow_acc <- read.csv("https://raw.githubusercontent.com/strawberryjamseoul/LUEM_2024/main/Calgary_Table/zonal_fac.csv")
+flow_acc <- read.csv("C:\\Users\\USER\\Desktop\\LandUseModeling\\Assignment3\\Calgary\\table\\zonal_fac.csv")
 
-land_use <- read.csv("https://raw.githubusercontent.com/strawberryjamseoul/LUEM_2024/main/Calgary_Table/zonal_lulc.csv")
+land_use <- read.csv("C:\\Users\\USER\\Desktop\\LandUseModeling\\Assignment3\\Calgary\\table\\zonal_lulc.csv")
 
-slope <- read.csv("https://raw.githubusercontent.com/strawberryjamseoul/LUEM_2024/main/Calgary_Table/zonal_slope.csv")
+slope <- read.csv("C:\\Users\\USER\\Desktop\\LandUseModeling\\Assignment3\\Calgary\\table\\zonal_slope.csv")
 
-water_body <- read.csv("https://raw.githubusercontent.com/strawberryjamseoul/LUEM_2024/main/Calgary_Table/zonal_water.csv")
+water_body <- read.csv("C:\\Users\\USER\\Desktop\\LandUseModeling\\Assignment3\\Calgary\\table\\zonal_water.csv")
 ```
 
 # 2: Exploratory Analysis
@@ -111,9 +110,9 @@ water_body <- read.csv("https://raw.githubusercontent.com/strawberryjamseoul/LUE
 
 Here, we used 1-kilometer by 1-kilometer lattice grid cells (known as a fishnet) to express data uniformly across Calgary. Figure 2.1 shows past flooding incidents in Calgary, displayed using grid cells. We chose to use a 1-kilometer squared grid cell to ensure that an area we predict to be at risk of flooding covers a sizable portion of land that is big enough to encompass a neighborhood but small enough to be useful in our analysis. 
 
-```{r Fishnet}
-calgary_fishnet<-st_read("https://raw.githubusercontent.com/luyiiw/LUEM/main/Calgary_JSON/Calgary_Fishnet.json")
-calgary_boundary<-st_read("https://raw.githubusercontent.com/luyiiw/LUEM/main/Calgary_JSON/Calgary_Boundary.json")
+```{r Fishnet, warning = FALSE, message = FALSE}
+calgary_fishnet<-st_read("C:\\Users\\USER\\Desktop\\LandUseModeling\\Assignment3\\Calgary\\json\\Calgary_Fishnet.json")
+calgary_boundary<-st_read("C:\\Users\\USER\\Desktop\\LandUseModeling\\Assignment3\\Calgary\\json\\Calgary_Boundary.json")
 
 calgary_Floods <- calgary_fishnet %>% 
   left_join(inundation, by = "FID")
@@ -147,7 +146,7 @@ After testing multiple features, our team decided to include flood accumulation,
 Moreover, we added surface permeability in our model as we believe it might be an important factor contributing to pluvial floods from surface runoff. We categorized permeability using a threshold for each 1-kilometer square fishnet cell. A cell with less than 25% of urban land cover was categorized as permeable. A cell with more than 25% of urban land cover was categorized as impermeable.
 
 
-```{r clean_data}
+```{r clean_data, warning = FALSE, include=FALSE, message = FALSE}
 # Creating tables to combine exploratory data
 flood_dep <- inundation %>%
   select(FID, RANGE) %>%
@@ -204,7 +203,7 @@ floodPlotVariables <-
 
 ```
 
-```{r variable_maps}
+```{r variable_maps, warning = FALSE, include=FALSE, message = FALSE}
 library(raster)
 #Inundation Calgary
 dependent <- raster("C:/Users/USER/Desktop/LandUseModeling/Assignment3/calgary_raster/dependent.tif")
@@ -277,7 +276,8 @@ ggplot() +
                       na.value = "transparent",
                       limits = c(NA, 28)) +
   coord_sf() +
-      labs(title = "Slope in Calgary, Canada") +
+      labs(title = "Slope in Calgary, Canada",
+       caption = "Figure 2.4") +
   mapTheme
 #Elevation
 
@@ -298,21 +298,14 @@ ggplot() +
                        labels = c(as.character(lowest_value), as.character((lowest_value+highest_value)/2), as.character(highest_value))) +  
   coord_sf() +
   labs(title = "Elevation in Calgary, Canada",
-       caption = "Figure 2.25") +
+       caption = "Figure 2.5") +
 mapTheme
 
-ggplot() +
-  geom_raster(data = cal_dem_df, aes(x = x, y = y, fill = calgary_dem)) + 
-    scale_fill_viridis_c(name = "Elevation (m)", na.value = "transparent")+  
-  coord_sf() +  
-  labs(title = "Elevation in Calgary, Canada",
-       caption = "Figure 2.6") +  
-   mapTheme
 
 
 ```
 
-```{r plot_variables}
+```{r plot_variables, warning = FALSE, include=FALSE, message = FALSE}
 # need to check the labels for flood and not flood 
 ggplot(floodPlotVariables %>%
          group_by(flood, variable) %>%
@@ -362,10 +355,13 @@ floodTest  <- model_data[-trainIndex,]
 ## 3.2: Making the Binomial Model
 
 ```{r}
+library(dplyr)
+
 floodModel <- glm(flood ~ ., 
-                    family="binomial"(link="logit"), data = floodTrain %>%
-                                                            as.data.frame() %>%
-                                                            select(-FID))
+                  family = binomial(link = "logit"), 
+                  data = floodTrain %>%
+                          as.data.frame() %>%
+                          dplyr::select(-FID))
 summary(floodModel)
 ```
 
@@ -442,7 +438,7 @@ Additionally, the area under the ROC Curve is 0.85. This signifies that the mode
 
 ## 3.6: Cross-Validation
 
-```{r cross_validation}
+```{r cross_validation, message = FALSE, warning = FALSE}
 ctrl <- trainControl(method = "cv", 
                      number = 100, 
                      p = 0.7, 
@@ -545,15 +541,15 @@ This figure displays where the model predicted “Flood” and “No Flood” co
 ## 5.1: Load Data Denver
 ```{r load_data_den}
 # independent variables
-elevation_den <- read.csv("https://raw.githubusercontent.com/luyiiw/LUEM/main/denver_table/Zonal_elevation_den.csv")
+elevation_den <- read.csv("C:\\Users\\USER\\Desktop\\LandUseModeling\\Assignment3\\Denver\\table\\Zonal_elevation_den.csv")
 
-flow_acc_den <- read.csv("https://raw.githubusercontent.com/luyiiw/LUEM/main/denver_table/Zonal_fac_den.csv")
+flow_acc_den <- read.csv("C:\\Users\\USER\\Desktop\\LandUseModeling\\Assignment3\\Denver\\table\\Zonal_fac_den.csv")
 
-land_use_den <- read.csv("https://raw.githubusercontent.com/luyiiw/LUEM/main/denver_table/Zonal_permea_den.csv")
+land_use_den <- read.csv("C:\\Users\\USER\\Desktop\\LandUseModeling\\Assignment3\\Denver\\table\\Zonal_permea_den.csv")
 
-slope_den <- read.csv("https://raw.githubusercontent.com/luyiiw/LUEM/main/denver_table/Zonal_slope_den.csv")
+slope_den <- read.csv("C:\\Users\\USER\\Desktop\\LandUseModeling\\Assignment3\\Denver\\table\\Zonal_slope_den.csv")
 
-water_body_den <- read.csv("https://raw.githubusercontent.com/luyiiw/LUEM/main/denver_table/Zonal_waterdist_den.csv")
+water_body_den <- read.csv("C:\\Users\\USER\\Desktop\\LandUseModeling\\Assignment3\\Denver\\table\\Zonal_waterdist_den.csv")
 
 ```
 
@@ -561,38 +557,38 @@ water_body_den <- read.csv("https://raw.githubusercontent.com/luyiiw/LUEM/main/d
 ```{r data_cleaning_den}
 #1 Elevation
 elev_comb_den <- elevation_den %>%
-  select(FID, MEAN) %>%
+ dplyr::select(FID, MEAN) %>%
   rename(mean_elev= MEAN)
 
 #2 Slope
 slope_comb_den <- slope_den %>%
-  select(FID, MAX) %>%
+  dplyr::select(FID, MAX) %>%
   rename(max_slope= MAX)
 
 #3 Water body
 water_comb_den <- water_body_den %>%
-  select(FID, MIN) %>%
+dplyr::select(FID, MIN) %>%
   rename(min_dist_water= MIN)
 
 #4 Flow accumulation
 fac_comb_den <-  flow_acc_den %>%
-  select(FID, MEAN) %>%
+ dplyr::select(FID, MEAN) %>%
   rename(mean_fac= MEAN)
 #changed from max to mean
 
 #5 Land Use/Permeability
 lu_comb_den <- land_use_den %>%
-  select(FID, MEAN) %>%
+ dplyr::select(FID, MEAN) %>%
   rename(land_use = MEAN) %>%
   mutate(permeability = case_when(
     land_use < 0.25 ~ '0',
     land_use >= 0.25 ~ '1')) %>%
-  select(-land_use)
+ dplyr::select(-land_use)
 
 ```
 
 ## 5.3: Model Building Denver
-```{r}
+```{r model_data, message = FALSE, warning = FALSE}
 # Combine all data sets for DENVER model building
 model_data_den <- elev_comb_den %>%
   inner_join(slope_comb_den, by = "FID") %>%
@@ -605,11 +601,11 @@ model_data_den <- elev_comb_den %>%
 rm(elev_comb_den, slope_comb_den, water_comb_den, fac_comb_den, lu_comb_den)
 ```
 
-```{r denver_variables}
+```{r denver_variables, message = FALSE, warning = FALSE}
 ## Denver Independent Maps
 
-denver_fishnet<-st_read("https://raw.githubusercontent.com/luyiiw/LUEM/main/Denver_JSON/denver_fishnet.json")
-denver_boundary<-st_read("https://raw.githubusercontent.com/luyiiw/LUEM/main/Denver_JSON/denver_boundary.json")
+denver_fishnet<-st_read("C:\\Users\\USER\\Desktop\\LandUseModeling\\Assignment3\\Denver\\json\\denver_fishnet.json")
+denver_boundary<-st_read("C:\\Users\\USER\\Desktop\\LandUseModeling\\Assignment3\\Denver\\json\\denver_boundary.json")
 
 fishnet_shp_den<- st_read("C:/Users/USER/Desktop/LandUseModeling/Assignment3/Denver/denver_boundary.shp")
 st_geometry_type(fishnet_shp_den)
@@ -720,49 +716,6 @@ den_floodModel <- cbind(model_data_den, den_classProbs) %>%
 joined_fishnet_den <- denver_fishnet %>% 
   left_join(den_floodModel , by = "FID")
 
-ggplot() + 
-    geom_sf(data=joined_fishnet_den, aes(fill=factor(ntile(allPredictions2,5))), 
-            colour=NA) +  # Raster layer
-  geom_sf(data = denver_fishnet, color = "grey", fill = NA) + 
-    scale_fill_manual(values = c("#eff3ff", "#bdd7e7", "#bcaecc", "#5a4565", "#3e204f"),
-                      labels=as.character(quantile(joined_fishnet_den$allPredictions2,
-                                                 c(0.1,.2,.4,.6,.8),
-                                                 na.rm=T)),
-                      name="Predicted\nProbabilities(%)\n(Quintile\nBreaks)") +
-  mapTheme +
-  labs(title="Predicted Probability of Flood Inundation in Denver, Colorado",
-       caption = "Figure 5.6")
-
-breaks_values <- quantile(joined_fishnet_den$allPredictions2, probs = c(0, 0.25, 0.5, 0.75, 1), na.rm = TRUE)
-labels_values <- format(breaks_values, digits = 4, nsmall = 2)
-
-ggplot() + 
-    geom_sf(data = joined_fishnet_den, aes(fill = factor(ntile(allPredictions2, 5))), colour = NA) +
-    geom_sf(data = denver_fishnet, color = "grey", fill = NA) +
-    scale_fill_manual(values = c("#eff3ff", "#bdd7e7", "#bcaecc", "#5a4565", "#3e204f"),
-                      labels = labels_values,
-                      name = "Predicted Probabilities (%)") +
-    labs(title = "Predicted Probability of Flood Inundation in Denver, Colorado",
-       caption = "Figure 5.7") +
-    mapTheme
-
-
-breaks <- quantile(joined_fishnet_den$allPredictions2, probs = seq(0, 1, 0.25), na.rm = TRUE)
-labels <- formatC(breaks, format = "f", digits = 2)  # Use formatC for more control over formatting
-
-ggplot() + 
-    geom_sf(data = joined_fishnet_den, aes(fill = factor(ntile(allPredictions2, 5))), colour = NA) +  # Raster layer
-    geom_sf(data = denver_fishnet, color = "grey", fill = NA) +  # Denver fishnet overlay
-    scale_fill_manual(
-      values = c("#eff3ff", "#bdd7e7", "#bcaecc", "#5a4565", "#3e204f"),  
-      labels = labels,  # Use formatted labels for clarity
-      name = "Predicted\nProbabilities(%)\n(Quintile\nBreaks)"
-    ) +
-    labs(title = "Predicted Probability of Flood Inundation in Denver, Colorado",
-       caption = "Figure 5.8") +
-  mapTheme
-
-
 quantile_breaks <- quantile(joined_fishnet_den$allPredictions2, probs = seq(0, 1, by = 0.2), na.rm = TRUE)
 # Create custom labels based on these breaks
 custom_labels <- sprintf("%.2f - %.2f", head(quantile_breaks, -1), tail(quantile_breaks, -1))
@@ -776,7 +729,7 @@ ggplot() +
       name = "Predicted\nProbabilities(%)\n(Quintile\nBreaks)"
     ) +
     labs(title = "Predicted Probability of Flood Inundation in Denver, Colorado",
-       caption = "Figure 5.9") +
+       caption = "Figure 5.6") +
   mapTheme
 
 ```
