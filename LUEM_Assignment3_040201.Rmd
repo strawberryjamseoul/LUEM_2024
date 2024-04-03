@@ -277,6 +277,7 @@ classProbs <- predict(floodModel, floodTest, type="response")
 hist(classProbs, col = "#1f78b4", main = "Histogram of Flood Probabilities") 
 
 
+# testing probabilities 
 testProbs <- data.frame(obs = as.factor(floodTest$flood),
                         pred = classProbs)
 
@@ -286,10 +287,10 @@ ggplot(testProbs, aes(x = pred, fill=as.factor(obs))) +
   xlab("Probability") +
   ylab("Frequency")+
   geom_vline(xintercept = .5) +
-  labs(title="Model Validation",
+  labs(title="Distribution of Predicted Probabilities by Observed Outcome",
        caption = "Figure 3.2")+
   scale_fill_manual(values = c("#e7f5c6", "#1f78b4"),
-                      labels = c("Not Flood","Flood"),
+                      labels = c("No Flood","Flood"),
                       name = "")+
   plotTheme
 ```
@@ -304,17 +305,17 @@ caret::confusionMatrix(reference = as.factor(testProbs$obs),
                        positive = "1")
 ```
 
-Predicted = 0, Observed = 0 —> True Negative (No flood correctly predicted 130)
+**Confusion Matrix Outcome:**
 
-Predicted = 1, Observed = 1 —> True Positive (Floods correctly predicted 40)
+- Correctly predicted "No Flood" (True Negative): 130  
+- Correctly predicted "Flood (True Positive)": 40 
+- Incorrectly predicted "Flood" (False Positive): 23
+- Incorrectly predicted "No Flood" (False Negative): 10
 
-Predicted = 1, Observed = 0 —> False Positive (Incorrectly predicted flood when there was no flood 23)
+**Model Performance:**
 
-Predicted = 0, Observed = 1 —> False Negative (Incorrectly predicted no flood when there was a flood 10)
-
-Sensitivity: 0.63
-Specificity: 0.92
-
+- Sensitivity: 0.63
+- Specificity: 0.92
 
 ## 3.5: ROC Curve
 
@@ -336,7 +337,7 @@ auc(testProbs$obs, testProbs$pred)
 ```
 Area under the curve: 0.85
 
-## 3.6: Cross-Validation
+## 3.6: k-Fold Cross-Validation
 
 ```{r cross_validation}
 ctrl <- trainControl(method = "cv", 
