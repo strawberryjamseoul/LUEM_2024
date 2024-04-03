@@ -208,7 +208,7 @@ floodPlotVariables <-
 ```{r variable_maps}
 library(raster)
 #Inundation Calgary
-dependent <- raster("/Users/luyiiwong/Documents/Land Use & Environmental Modeling/Assignment3/calgary_raster/dependent.tif")
+dependent <- raster("C:/Users/USER/Desktop/LandUseModeling/Assignment3/calgary_raster/dependent.tif")
 dependent_df <- as.data.frame(dependent, xy = TRUE)
 fishnet_shp<- st_read("C:/Users/USER/Desktop/LandUseModeling/Assignment3/Calgary/fishnet_boundary.shp")
 st_geometry_type(fishnet_shp)
