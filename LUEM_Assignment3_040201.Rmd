@@ -271,11 +271,12 @@ summary(floodModel)
 
 ## 3.3: Model Validation
 
+Figure 3.1 shows the distribution of predicted probabilities by observed outcome for flooding and no flooding. At a 0.5 threshold, we observe that the model is better at correctly predicting “No Flood” instances over “Flood.” 
+
 ```{r}
 classProbs <- predict(floodModel, floodTest, type="response")
 
-hist(classProbs, col = "#1f78b4", main = "Histogram of Flood Probabilities") 
-
+# hist(classProbs, col = "#1f78b4", main = "Histogram of Flood Probabilities") 
 
 # testing probabilities 
 testProbs <- data.frame(obs = as.factor(floodTest$flood),
@@ -288,7 +289,7 @@ ggplot(testProbs, aes(x = pred, fill=as.factor(obs))) +
   ylab("Frequency")+
   geom_vline(xintercept = .5) +
   labs(title="Distribution of Predicted Probabilities by Observed Outcome",
-       caption = "Figure 3.2")+
+       caption = "Figure 3.1")+
   scale_fill_manual(values = c("#e7f5c6", "#1f78b4"),
                       labels = c("No Flood","Flood"),
                       name = "")+
@@ -314,8 +315,7 @@ caret::confusionMatrix(reference = as.factor(testProbs$obs),
 
 **Model Performance:**
 
-- Sensitivity: 0.63
-- Specificity: 0.92
+The model has a sensitivity (true positive rate) of 0.63. This suggests that the model was correct at predicting “Flood” 63% of the time. The model has a specificity (true negative rate) of 0.92. This suggested that the model was correct at predicting “No Flood” 92% of the time. While the model performs well overall, in practical application, the model would ideally have a higher sensitivity rate. This is because we would want higher accuracy in predicting flooding events.
 
 ## 3.5: ROC Curve
 
