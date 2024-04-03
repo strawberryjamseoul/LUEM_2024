@@ -207,9 +207,8 @@ floodPlotVariables <-
 
 ```{r variable_maps}
 library(raster)
-library(rgdal)
 #Inundation Calgary
-dependent <- raster("C:/Users/USER/Desktop/LandUseModeling/Assignment3/calgary_raster/dependent.tif")
+dependent <- raster("/Users/luyiiwong/Documents/Land Use & Environmental Modeling/Assignment3/calgary_raster/dependent.tif")
 dependent_df <- as.data.frame(dependent, xy = TRUE)
 fishnet_shp<- st_read("C:/Users/USER/Desktop/LandUseModeling/Assignment3/Calgary/fishnet_boundary.shp")
 st_geometry_type(fishnet_shp)
@@ -229,7 +228,8 @@ ggplot() +
  scale_fill_viridis_c(name = "Flow Accumulation", option = "inferno", na.value = "transparent",
   limits = c(min(cal_fac_df$Calgary_fac, na.rm = TRUE), max(cal_fac_df$Calgary_fac, na.rm = TRUE) *1.01))+
   coord_sf() +
-  labs(title = "Flood Accumulation in Calgary, Canada") +
+  labs(title = "Flood Accumulation in Calgary, Canada",
+       caption = "Figure 2.2") +
   mapTheme
 #permeability  
 calgary_perme<-raster("C:/Users/USER/Desktop/LandUseModeling/Assignment3/calgary_raster/calgary_perme.tif")
@@ -247,7 +247,8 @@ ggplot() +
                     name = "Permeability Status",
                      na.value = "transparent") +
   coord_sf() +  
-  labs(title = "Permeability by Land Cover in Calgary,Canada") +
+  labs(title = "Permeability by Land Cover in Calgary,Canada",
+       caption = "Figure 2.3") +
   mapTheme
 #Distance from water Body
 calgary_water<-raster("C:/Users/USER/Desktop/LandUseModeling/Assignment3/calgary_raster/calgary_water.tif")
@@ -262,7 +263,8 @@ ggplot() +
                       na.value = "transparent",
                       limits = c(NA, 4000)) +  # Explicitly set the upper limit to 4000
   coord_sf() +
-  labs(title = "Distance from Water Body in Calgary, Canada") +
+  labs(title = "Distance from Water Body in Calgary, Canada",
+       caption = "Figure 2.4") +
   mapTheme
 #slope
 calgary_slope<-raster("C:/Users/USER/Desktop/LandUseModeling/Assignment3/calgary_raster/calgary_slope.tif")
@@ -296,109 +298,19 @@ ggplot() +
                        breaks = c(lowest_value, (lowest_value+highest_value)/2, highest_value),  
                        labels = c(as.character(lowest_value), as.character((lowest_value+highest_value)/2), as.character(highest_value))) +  
   coord_sf() +
-  labs(title = "Elevation in Calgary, Canada") +
+  labs(title = "Elevation in Calgary, Canada",
+       caption = "Figure 2.25") +
 mapTheme
 
 ggplot() +
   geom_raster(data = cal_dem_df, aes(x = x, y = y, fill = calgary_dem)) + 
     scale_fill_viridis_c(name = "Elevation (m)", na.value = "transparent")+  
   coord_sf() +  
-  labs(title = "Elevation in Calgary, Canada") +  
+  labs(title = "Elevation in Calgary, Canada",
+       caption = "Figure 2.6") +  
    mapTheme
 
-## Denver Independent Maps
 
-denver_fishnet<-st_read("https://raw.githubusercontent.com/luyiiw/LUEM/main/Denver_JSON/denver_fishnet.json")
-denver_boundary<-st_read("https://raw.githubusercontent.com/luyiiw/LUEM/main/Denver_JSON/denver_boundary.json")
-
-fishnet_shp_den<- st_read("C:/Users/USER/Desktop/LandUseModeling/Assignment3/Denver/denver_boundary.shp")
-st_geometry_type(fishnet_shp_den)
-
-denfishnet_shp <- st_zm(fishnet_shp_den, drop = TRUE)
-
-#Flow Accumulation
-den_fac<-raster("C:/Users/USER/Desktop/LandUseModeling/Assignment3/denver_rast/den_fac.tif")
-clipped_den_fac <- mask(den_fac,denfishnet_shp )
-den_fac_df <-as.data.frame(clipped_den_fac , xy=TRUE)
-
-ggplot() +
-    geom_raster(data = den_fac_df , aes(x = x, y = y, fill =den_fac)) +
- scale_fill_viridis_c(name = "Flow Accumulation", option = "inferno", na.value = "transparent",
-  limits = c(min(den_fac_df$den_fac, na.rm = TRUE), max(den_fac_df$den_fac, na.rm = TRUE) *1.01))+
-  coord_sf() +
-  labs(title = "Flood Accumulation in Denver, Colorado") +
-  mapTheme
-
-#Permeability
-den_perme<-raster("C:/Users/USER/Desktop/LandUseModeling/Assignment3/denver_rast/den_perme.tif")
-clipped_den_perme <- mask(den_perme,denfishnet_shp)
-den_perme_df <-as.data.frame(clipped_den_perme, xy=TRUE)
-
-den_perme_df$den_perme<-factor(den_perme_df$den_perme)
-
-ggplot() +
-  geom_raster(data = den_perme_df, aes(x = x, y = y, fill = den_perme)) + 
-  geom_tile() +  # Use geom_tile for raster data
-  scale_fill_manual(values = c("1" = "#D3D3D3", "0" = "#00008B"), 
-                    labels = c("1" = "Impermeable", "0" = "Permeable"), 
-                    name = "Permeability Status",
-                     na.value = "transparent") +
-  coord_sf() +  # Explicitly use spatial coordinates
-  labs(title = "Permeability by Land Cover in Denver, Colorado") +
-  mapTheme
- 
-#Distance from water Body
-den_water<-raster("C:/Users/USER/Desktop/LandUseModeling/Assignment3/denver_rast/den_water.tif")
-
-clipped_den_water <- mask(den_water,denfishnet_shp)
-den_water_df <-as.data.frame(clipped_den_water, xy=TRUE)
-
-
-ggplot() +
-  geom_raster(data = den_water_df , aes(x = x, y = y, fill = den_water)) +
-  scale_fill_gradient(name = "Euclidean Distance",
-                      low = "lightblue", high = "darkblue",
-                      na.value = "transparent",
-                      limits = c(NA, 5000)) +  
-  coord_sf() +
-  labs(title = "Distance from Water Body in Denver, Colorado") +
-  mapTheme
-
-#Slope
-denver_slope<-raster("C:/Users/USER/Desktop/LandUseModeling/Assignment3/denver_rast/den_slope.tif")
-
-clipped_den_slope <- mask(denver_slope,denfishnet_shp)
-den_slope_df <-as.data.frame(clipped_den_slope, xy=TRUE)
-
-ggplot() +
-    geom_raster(data = den_slope_df , aes(x = x, y = y, fill =den_slope)) +
-    scale_fill_gradient(name = "Slope",
-                      low = "#FDE6CF", high = "#CC2D20",
-                      na.value = "transparent",
-                      limits = c(NA, 45)) +
-  coord_sf() +
-      labs(title = "Slope in Denver, Colorado") +
-  mapTheme
-
-#Elevation
-den_dem<-raster("C:/Users/USER/Desktop/LandUseModeling/Assignment3/denver_rast/den_dem.tif")
-
-clipped_den_dem <- mask(den_dem,denfishnet_shp)
-den_dem_df <-as.data.frame(clipped_den_dem , xy=TRUE)
-
-lowest_value_den <- 1551
-highest_value_den <- 1754
-
-ggplot() +
-  geom_raster(data = den_dem_df, aes(x = x, y = y, fill = den_dem)) +
-  scale_fill_viridis_c(name = "Elevation (m)",
-                       na.value = "transparent",
-                       limits = c(lowest_value_den, highest_value_den), 
-                       breaks = c(lowest_value_den, (lowest_value_den+highest_value_den)/2, highest_value_den),  
-                       labels = c(as.character(lowest_value_den), as.character((lowest_value_den+highest_value_den)/2), as.character(highest_value_den))) +  
-  coord_sf() +
-  labs(title = "Elevation in Denver, Colorado") +
-mapTheme
 ```
 
 ```{r plot_variables}
@@ -415,7 +327,7 @@ ggplot(floodPlotVariables %>%
                       labels = c("No Flood","Flood"),
                       name = "") +
   labs(title="Continuous Variables Impacting Flood Risk",
-       caption = "Figure 2.2")+
+       caption = "Figure 2.7")+
     labs(x="Flood", y="Value") +
   plotTheme
 
@@ -628,10 +540,7 @@ joined_fishnet_cal %>%
   mapTheme
 ```
 
-```{r}
-# Insert final flood inundation map for Calgary
-
-```
+This figure displays where the model predicted “Flood” and “No Flood” correctly and incorrectly. The pattern from this map suggests that the model had difficulty predicting floods in areas further away from a water body. We also noticed that the model had more False Negative results in the southern part of Calgary, suggesting that other factors might contribute to flood risk there. Additionally, the False Positive results are clustered around the True Positive cells. This suggests that proximity to waterbody might have resulted in these predictions.  
 
 # 5: Applying the Model to Denver, Colorado 
 ## 5.1: Load Data Denver
@@ -697,7 +606,112 @@ model_data_den <- elev_comb_den %>%
 rm(elev_comb_den, slope_comb_den, water_comb_den, fac_comb_den, lu_comb_den)
 ```
 
+```{r denver_variables}
+## Denver Independent Maps
+
+denver_fishnet<-st_read("https://raw.githubusercontent.com/luyiiw/LUEM/main/Denver_JSON/denver_fishnet.json")
+denver_boundary<-st_read("https://raw.githubusercontent.com/luyiiw/LUEM/main/Denver_JSON/denver_boundary.json")
+
+fishnet_shp_den<- st_read("C:/Users/USER/Desktop/LandUseModeling/Assignment3/Denver/denver_boundary.shp")
+st_geometry_type(fishnet_shp_den)
+
+denfishnet_shp <- st_zm(fishnet_shp_den, drop = TRUE)
+
+#Flow Accumulation
+den_fac<-raster("C:/Users/USER/Desktop/LandUseModeling/Assignment3/denver_rast/den_fac.tif")
+clipped_den_fac <- mask(den_fac,denfishnet_shp )
+den_fac_df <-as.data.frame(clipped_den_fac , xy=TRUE)
+
+ggplot() +
+    geom_raster(data = den_fac_df , aes(x = x, y = y, fill =den_fac)) +
+ scale_fill_viridis_c(name = "Flow Accumulation", option = "inferno", na.value = "transparent",
+  limits = c(min(den_fac_df$den_fac, na.rm = TRUE), max(den_fac_df$den_fac, na.rm = TRUE) *1.01))+
+  coord_sf() +
+  labs(title = "Flood Accumulation in Denver, Colorado",
+       caption = "Figure 5.1") +
+  mapTheme
+
+#Permeability
+den_perme<-raster("C:/Users/USER/Desktop/LandUseModeling/Assignment3/denver_rast/den_perme.tif")
+clipped_den_perme <- mask(den_perme,denfishnet_shp)
+den_perme_df <-as.data.frame(clipped_den_perme, xy=TRUE)
+
+den_perme_df$den_perme<-factor(den_perme_df$den_perme)
+
+ggplot() +
+  geom_raster(data = den_perme_df, aes(x = x, y = y, fill = den_perme)) + 
+  geom_tile() +  # Use geom_tile for raster data
+  scale_fill_manual(values = c("1" = "#D3D3D3", "0" = "#00008B"), 
+                    labels = c("1" = "Impermeable", "0" = "Permeable"), 
+                    name = "Permeability Status",
+                     na.value = "transparent") +
+  coord_sf() +  # Explicitly use spatial coordinates
+  labs(title = "Permeability by Land Cover in Denver, Colorado",
+       caption = "Figure 5.2") +
+  mapTheme
+ 
+#Distance from water Body
+den_water<-raster("C:/Users/USER/Desktop/LandUseModeling/Assignment3/denver_rast/den_water.tif")
+
+clipped_den_water <- mask(den_water,denfishnet_shp)
+den_water_df <-as.data.frame(clipped_den_water, xy=TRUE)
+
+
+ggplot() +
+  geom_raster(data = den_water_df , aes(x = x, y = y, fill = den_water)) +
+  scale_fill_gradient(name = "Euclidean Distance",
+                      low = "lightblue", high = "darkblue",
+                      na.value = "transparent",
+                      limits = c(NA, 5000)) +  
+  coord_sf() +
+  labs(title = "Distance from Water Body in Denver, Colorado",
+       caption = "Figure 5.3") +
+  mapTheme
+
+#Slope
+denver_slope<-raster("C:/Users/USER/Desktop/LandUseModeling/Assignment3/denver_rast/den_slope.tif")
+
+clipped_den_slope <- mask(denver_slope,denfishnet_shp)
+den_slope_df <-as.data.frame(clipped_den_slope, xy=TRUE)
+
+ggplot() +
+    geom_raster(data = den_slope_df , aes(x = x, y = y, fill =den_slope)) +
+    scale_fill_gradient(name = "Slope",
+                      low = "#FDE6CF", high = "#CC2D20",
+                      na.value = "transparent",
+                      limits = c(NA, 45)) +
+  coord_sf() +
+      labs(title = "Slope in Denver, Colorado",
+       caption = "Figure 5.4") +
+  mapTheme
+
+#Elevation
+den_dem<-raster("C:/Users/USER/Desktop/LandUseModeling/Assignment3/denver_rast/den_dem.tif")
+
+clipped_den_dem <- mask(den_dem,denfishnet_shp)
+den_dem_df <-as.data.frame(clipped_den_dem , xy=TRUE)
+
+lowest_value_den <- 1551
+highest_value_den <- 1754
+
+ggplot() +
+  geom_raster(data = den_dem_df, aes(x = x, y = y, fill = den_dem)) +
+  scale_fill_viridis_c(name = "Elevation (m)",
+                       na.value = "transparent",
+                       limits = c(lowest_value_den, highest_value_den), 
+                       breaks = c(lowest_value_den, (lowest_value_den+highest_value_den)/2, highest_value_den),  
+                       labels = c(as.character(lowest_value_den), as.character((lowest_value_den+highest_value_den)/2), as.character(highest_value_den))) +  
+  coord_sf() +
+  labs(title = "Elevation in Denver, Colorado",
+       caption = "Figure 5.5") +
+mapTheme
+
+```
+
 ## 5.4: Predicting Flood in Denver
+
+The predicted probabilities for flood inundation in Denver, Colorado, are generally very low. We suspect the predictions are skewed because of the variables used in the model. Elevation was a highly significant variable in the model. Denver overall has a higher average elevation than Calgary, which may have impacted the predicted risk of flooding.
+
 ```{r}
 den_classProbs <- predict(floodModel, model_data_den, type = "response")
 
@@ -717,7 +731,8 @@ ggplot() +
                                                  na.rm=T)),
                       name="Predicted\nProbabilities(%)\n(Quintile\nBreaks)") +
   mapTheme +
-  labs(title="Predicted Probability of Flood Inundation in Denver, Colorado")
+  labs(title="Predicted Probability of Flood Inundation in Denver, Colorado",
+       caption = "Figure 5.6")
 
 breaks_values <- quantile(joined_fishnet_den$allPredictions2, probs = c(0, 0.25, 0.5, 0.75, 1), na.rm = TRUE)
 labels_values <- format(breaks_values, digits = 4, nsmall = 2)
@@ -728,7 +743,8 @@ ggplot() +
     scale_fill_manual(values = c("#eff3ff", "#bdd7e7", "#bcaecc", "#5a4565", "#3e204f"),
                       labels = labels_values,
                       name = "Predicted Probabilities (%)") +
-    labs(title = "Predicted Probability of Flood Inundation in Denver, Colorado") +
+    labs(title = "Predicted Probability of Flood Inundation in Denver, Colorado",
+       caption = "Figure 5.7") +
     mapTheme
 
 
@@ -739,11 +755,12 @@ ggplot() +
     geom_sf(data = joined_fishnet_den, aes(fill = factor(ntile(allPredictions2, 5))), colour = NA) +  # Raster layer
     geom_sf(data = denver_fishnet, color = "grey", fill = NA) +  # Denver fishnet overlay
     scale_fill_manual(
-      values = c("#eff3ff", "#bdd7e7", "#bcaecc", "#5a4565", "#3e204f"),  # Slightly revised for clearer color progression
+      values = c("#eff3ff", "#bdd7e7", "#bcaecc", "#5a4565", "#3e204f"),  
       labels = labels,  # Use formatted labels for clarity
       name = "Predicted\nProbabilities(%)\n(Quintile\nBreaks)"
     ) +
-    labs(title = "Predicted Probability of Flood Inundation in Denver, Colorado") +
+    labs(title = "Predicted Probability of Flood Inundation in Denver, Colorado",
+       caption = "Figure 5.8") +
   mapTheme
 
 
@@ -759,8 +776,12 @@ ggplot() +
       labels = custom_labels,  # Use the custom labels based on quantile breaks
       name = "Predicted\nProbabilities(%)\n(Quintile\nBreaks)"
     ) +
-    labs(title = "Predicted Probability of Flood Inundation in Denver, Colorado") +
+    labs(title = "Predicted Probability of Flood Inundation in Denver, Colorado",
+       caption = "Figure 5.9") +
   mapTheme
 
 ```
+
+# 6: Conclusion
+Our team believes that building a predictive flood model can be very helpful in guiding planning and policy decisions. We find that our current model performs well in predicting flooding in Calgary. However, we would suggest adjusting the model to increase its sensitivity. Moreover, we found that the model might not generalize well across cities. We suggest looking into engineering other variables, such as climate and rainfall features, that could improve the model's performance. 
 
