@@ -329,9 +329,7 @@ Kappa: 0.63
 ## Map Predictions
 =======
 ## 3.7: Goodness-of-Fit
->>>>>>> 5cc8468ce55b40b47891aa6aca451fab0b02c80d
 ```{r}
-###Refine here by yujin
 allPredictions <- 
   predict(cvFit, model_data, type="prob")[,2]
   
