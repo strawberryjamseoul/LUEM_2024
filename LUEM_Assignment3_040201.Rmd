@@ -367,7 +367,6 @@ Kappa: 0.63
 ## 3.7: Goodness-of-Fit
 
 ```{r}
-###Refine here by yujin
 allPredictions <- 
   predict(cvFit, model_data, type="prob")[,2]
   
