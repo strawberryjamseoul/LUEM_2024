@@ -556,7 +556,5 @@ ggplot() +
   # Or any other theme or customization you prefer
 
 
-
-
 ```
 
