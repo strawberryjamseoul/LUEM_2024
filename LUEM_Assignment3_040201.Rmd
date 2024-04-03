@@ -13,16 +13,19 @@ editor_options:
 
 # 1: Introduction
 ## 1.1: Context of Flooding in Calgary
-The city of Calgary is a located in Alberta, Canada. According to the national census, Calgary had a population of 1,306,784 in 2021 [Statistics Canada](https://www12.statcan.gc.ca/census-recensement/2021/search-recherche/productresults-resultatsproduits-eng.cfm?LANG=E&GEOCODE=2021A00054806016). Calgary has a dry climate, however, because of its proximity to mountains, the city is vulnerable to “unpredictable swings in the weather from heavy rains leaving to floods to many weeks of dry temperatures and little rain leading to droughts.” [Calgary.ca](https://www.calgary.ca/water/flooding.html) 
 
-In 2013, the city experienced a devastating flood. The flood was a result of “melting snowpack in the Rocky mountains combined with steep, rocky terrain caused rapid and intense flooding in southern-Alberta watersheds.” [Calgary.ca](https://www.calgary.ca/water/flooding/history-calgary.html) This flood resulted in one fatality, injuries, and massive infrastructure damage. The estimated damages from this flooding event is over $6 billion across the southern Alberta. This natural disaster resulted in tremendous infrastructure loss, financial burden in recovery, and trauma by Calgary residents impacted. 
+The city of Calgary is located in Alberta, Canada. According to the national census, Calgary had a population of 1,306,784 in 2021 [Statistics Canada](https://www12.statcan.gc.ca/census-recensement/2021/search-recherche/productresults-resultatsproduits-eng.cfm?LANG=E&GEOCODE=2021A00054806016). Calgary has a dry climate, however, because of its proximity to mountains, the city is vulnerable to “unpredictable swings in the weather from heavy rains leaving to floods to many weeks of dry temperatures and little rain leading to droughts.” [Calgary.ca](https://www.calgary.ca/water/flooding.html) 
+
+In 2013, the city experienced a devastating flood. The flood resulted from “melting snowpack in the Rocky mountains combined with steep, rocky terrain caused rapid and intense flooding in southern-Alberta watersheds.” [Calgary.ca](https://www.calgary.ca/water/flooding/history-calgary.html) This flood resulted in one fatality, injuries, and massive infrastructure damage. The estimated damages from this flooding event are over $6 billion across southern Alberta. This natural disaster resulted in tremendous infrastructure loss, the financial burden in recovery, and trauma for Calgary residents impacted. 
 
 ## 1.2: Planning Motivation
-Our team believes that studying flood inundation risk is important to prepare our cities from future impacts of flooding. Modeling flood inundation will inform planners and policy makers on high-flood risk areas. With this knowledge we can plan for the future, by recommending plans and policies to curb future development in high risk regions and protect moderate risk areas. 
 
-For this exercise, our team used Calgary as our case study to examine physical features that are correlated to flood risk. Based on our data exploration, we built a model to predict future flooding in Calgary, tested model performance, and applied it to a comparable city. Additionally, we chose Denver a city in Colorado, United States as our comparable city due to its similarities in climate. Our model is an example of the potential application of predictive models across various cities to predict flood risk using a city’s physical features.  
+Our team believes that studying flood inundation risk is important to prepare our cities for future impacts of flooding. Modeling flood inundation will inform planners and policymakers on high-flood risk areas. With this knowledge, we can plan for the future by recommending plans and policies to curb future development in high-risk regions and protect moderate-risk areas. 
+
+For this exercise, our team used Calgary as our case study to examine physical features correlated to flood risk. Based on our data exploration, we built a model to predict future flooding in Calgary, tested its performance, and applied it to a comparable city. Additionally, we chose Denver, a city in Colorado, United States, as our comparable city due to its similarities in climate. Our model is an example of the potential application of predictive models across various cities to predict flood risk using a city’s physical features. 
 
 ## 1.3: Setting Up Libraries
+
 ```{r setup, warning = FALSE, include=FALSE, message = FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
@@ -77,6 +80,7 @@ plotTheme <- theme(
 ```
 
 ## 1.1: Load Data
+
 ```{r load data}
 # dependent variable
 inundation <- read.csv("https://raw.githubusercontent.com/luyiiw/LUEM/main/calgary_table/zonal_depe.csv")
@@ -95,7 +99,20 @@ water_body <- read.csv("https://raw.githubusercontent.com/luyiiw/LUEM/main/calga
 ```
 
 # 2: Exploratory Analysis
-## 2.1: Fishnet and Joining to show Past Flood Inundation
+## 2.1: Model Hypothesis
+
+**Hypothesizing Factors that Increase Flood Risk:**
+
+1. **Waterbody**: The closer an area is to a water body, the higher the probability of flooding to occur. 
+2. **Elevation**: Areas with low elevation have a higher probability of flood occurrence than high-elevation areas.
+3. **Slope**: As the steepness of the slope increases in an area, the probability of flood inundation decreases. 
+4. **Flow accumulation**: The greater the flow accumulation in an area, the higher the probability of flood occurrence. 
+5. **Land use and land cover**: Urban and built-up areas are more likely to flood due to their high concentration of impermeable surfaces, compared to rural and undeveloped areas with higher concentrations of permeable surfaces. 
+
+## 2.2: Understanding Past Flood Inundation
+
+Here, we used 1-kilometer by 1-kilometer lattice grid cells (known as a fishnet) to express data uniformly across Calgary. Figure 2.1 shows past flooding incidents in Calgary, displayed using grid cells. We chose to use a 1-kilometer squared grid cell to ensure that an area we predict to be at risk of flooding covers a sizable portion of land that is big enough to encompass a neighborhood but small enough to be useful in our analysis. 
+
 ```{r Fishnet}
 
 calgary_fishnet<-st_read("https://raw.githubusercontent.com/luyiiw/LUEM/main/Calgary_JSON/Calgary_Fishnet.json")
@@ -113,14 +130,27 @@ ggplot() +
                      labels = c("1" = "Inundation", "0" = "No Inundation"),
                   name = "Inundation Status") +
   labs(title="Past Flood Inundation in Calgary, Canada",
-       caption = "Figure 1.1")+
+       caption = "Figure 2.1")+
   mapTheme+
     guides(fill = guide_legend(override.aes = list(shape = 22, size = 6)))
 
 ```
 
-## 2.2: Data Exploration
-```{r}
+## 2.3: Data Exploration
+
+After testing multiple features, our team decided to include flood accumulation, distance to a water body, slope steepness, elevation, and surface permeability in the model. We considered geographical, hydrological, and physical attributes when selecting our variables. Using our team’s expert knowledge of urban flooding, we wanted to account for variables that could increase the risk of pluvial and fluvial flooding. Pluvial flooding occurs due to heavy rainfall, independent of proximity to a water body. In contrast, fluvial flooding occurs when a water body overflows [Resources for the Future](https://www.rff.org/publications/explainers/flooding-in-the-united-states-101-causes-trends-and-impacts/#:~:text=and%20move%20faster.-,Pluvial,water%20floods%20and%20flash%20floods.). We believe this was an important consideration for our model, as Calgary is vulnerable to both types of flooding.
+
+**The statistically significant original features that we engineered were:**
+
+- Mean Flood Accumulation
+- Minimum Distance from Water Body
+- Maximum Steepness of Slope
+- Mean Elevation
+
+Moreover, we added surface permeability in our model as we believe it might be an important factor contributing to pluvial floods from surface runoff. We categorized permeability using a threshold for each 1-kilometer square fishnet cell. A cell with less than 25% of urban land cover was categorized as permeable. A cell with more than 25% of urban land cover was categorized as impermeable.
+
+
+```{r clean_data}
 # Creating tables to combine exploratory data
 flood_dep <- inundation %>%
   select(FID, RANGE) %>%
@@ -177,6 +207,11 @@ floodPlotVariables <-
 
 ```
 
+```{r variable_maps}
+## yujin please add maps here!
+
+```
+
 ```{r plot_variables}
 # need to check the labels for flood and not flood 
 ggplot(floodPlotVariables %>%
@@ -191,15 +226,15 @@ ggplot(floodPlotVariables %>%
                       labels = c("No Flood","Flood"),
                       name = "") +
   labs(title="Continuous Variables Impacting Flood Risk",
-       caption = "Figure 2.1")+
+       caption = "Figure 2.2")+
     labs(x="Flood", y="Value") +
   plotTheme
 
 ```
 
-
 # 3: Model Building 
 ## 3.1: Partition Training and Test Sets
+
 ```{r}
 # Combine all data sets for model building
 model_data <- flood_dep %>%
@@ -224,8 +259,8 @@ floodTest  <- model_data[-trainIndex,]
 
 ```
 
-
 ## 3.2: Making the Binomial Model
+
 ```{r}
 floodModel <- glm(flood ~ ., 
                     family="binomial"(link="logit"), data = floodTrain %>%
@@ -235,6 +270,7 @@ summary(floodModel)
 ```
 
 ## 3.3: Model Validation
+
 ```{r}
 classProbs <- predict(floodModel, floodTest, type="response")
 
@@ -259,6 +295,7 @@ ggplot(testProbs, aes(x = pred, fill=as.factor(obs))) +
 ```
 
 ## 3.4: Confusion Matrix
+
 ```{r confusion_matrix}
 testProbs$predClass  = ifelse(testProbs$pred > .5 ,1,0)
 
@@ -280,6 +317,7 @@ Specificity: 0.92
 
 
 ## 3.5: ROC Curve
+
 ```{r roc_curve, message = FALSE, warning = FALSE}
 # change obs to numeric
 testProbs$obs <- as.numeric(as.character(testProbs$obs))
@@ -299,6 +337,7 @@ auc(testProbs$obs, testProbs$pred)
 Area under the curve: 0.85
 
 ## 3.6: Cross-Validation
+
 ```{r cross_validation}
 ctrl <- trainControl(method = "cv", 
                      number = 100, 
@@ -325,11 +364,8 @@ ggplot(as.data.frame(cvFit$resample), aes(Accuracy)) +
 Accuracy: 0.86
 Kappa: 0.63
 
-<<<<<<< HEAD
-## Map Predictions
-=======
 ## 3.7: Goodness-of-Fit
->>>>>>> 5cc8468ce55b40b47891aa6aca451fab0b02c80d
+
 ```{r}
 ###Refine here by yujin
 allPredictions <- 
