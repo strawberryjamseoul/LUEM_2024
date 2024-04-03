@@ -82,18 +82,18 @@ plotTheme <- theme(
 
 ```{r load data}
 # dependent variable
-inundation <- read.csv("https://raw.githubusercontent.com/luyiiw/LUEM/main/calgary_table/zonal_depe.csv")
+inundation <- read.csv("https://raw.githubusercontent.com/strawberryjamseoul/LUEM_2024/main/Calgary_Table/zonal_depe.csv")
 
 # independent variables
-elevation <- read.csv("https://raw.githubusercontent.com/luyiiw/LUEM/main/calgary_table/zonal_elev.csv")
+elevation <- read.csv("https://raw.githubusercontent.com/strawberryjamseoul/LUEM_2024/main/Calgary_Table/zonal_elev.csv")
 
-flow_acc <- read.csv("https://raw.githubusercontent.com/luyiiw/LUEM/main/calgary_table/zonal_fac.csv")
+flow_acc <- read.csv("https://raw.githubusercontent.com/strawberryjamseoul/LUEM_2024/main/Calgary_Table/zonal_fac.csv")
 
-land_use <- read.csv("https://raw.githubusercontent.com/luyiiw/LUEM/main/calgary_table/zonal_lulc.csv")
+land_use <- read.csv("https://raw.githubusercontent.com/strawberryjamseoul/LUEM_2024/main/Calgary_Table/zonal_lulc.csv")
 
-slope <- read.csv("https://raw.githubusercontent.com/luyiiw/LUEM/main/calgary_table/zonal_slope.csv")
+slope <- read.csv("https://raw.githubusercontent.com/strawberryjamseoul/LUEM_2024/main/Calgary_Table/zonal_slope.csv")
 
-water_body <- read.csv("https://raw.githubusercontent.com/luyiiw/LUEM/main/calgary_table/zonal_water.csv")
+water_body <- read.csv("https://raw.githubusercontent.com/strawberryjamseoul/LUEM_2024/main/Calgary_Table/zonal_water.csv")
 ```
 
 # 2: Exploratory Analysis
@@ -112,7 +112,6 @@ water_body <- read.csv("https://raw.githubusercontent.com/luyiiw/LUEM/main/calga
 Here, we used 1-kilometer by 1-kilometer lattice grid cells (known as a fishnet) to express data uniformly across Calgary. Figure 2.1 shows past flooding incidents in Calgary, displayed using grid cells. We chose to use a 1-kilometer squared grid cell to ensure that an area we predict to be at risk of flooding covers a sizable portion of land that is big enough to encompass a neighborhood but small enough to be useful in our analysis. 
 
 ```{r Fishnet}
-
 calgary_fishnet<-st_read("https://raw.githubusercontent.com/luyiiw/LUEM/main/Calgary_JSON/Calgary_Fishnet.json")
 calgary_boundary<-st_read("https://raw.githubusercontent.com/luyiiw/LUEM/main/Calgary_JSON/Calgary_Boundary.json")
 
