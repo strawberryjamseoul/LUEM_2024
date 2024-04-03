@@ -450,8 +450,14 @@ model_data_den <- elev_comb_den %>%
 # Removing unnecessary data sets 
 rm(elev_comb_den, slope_comb_den, water_comb_den, fac_comb_den, lu_comb_den)
 ```
+## 4.4: Creating Fishnet Denver
+```{r}
+denver_fishnet<-st_read("https://raw.githubusercontent.com/luyiiw/LUEM/main/Denver_JSON/denver_fishnet.json")
+denver_boundary<-st_read("https://raw.githubusercontent.com/luyiiw/LUEM/main/Denver_JSON/denver_boundary.json")
 
-## 4.4: Predicting Flood in Denver
+
+```
+## 4.5: Predicting Flood in Denver
 ```{r}
 den_classProbs <- predict(floodModel, model_data_den, type = "response")
 
@@ -460,6 +466,9 @@ den_floodModel <- cbind(model_data_den, den_classProbs) %>%
 
 joined_fishnet_den <- denver_fishnet %>% 
   left_join(den_floodModel , by = "FID")
+
+
+mean(joined_fishnet_den$allPredictions2)
 
 ggplot() + 
     geom_sf(data=joined_fishnet_den, aes(fill=factor(ntile(allPredictions2,5))), 
@@ -472,53 +481,5 @@ ggplot() +
                       name="Predicted\nProbabilities(%)\n(Quintile\nBreaks)") +
   mapTheme +
   labs(title="Predicted Probability of Flood Inundation in Denver, Colorado")
-
-breaks_values <- quantile(joined_fishnet_den$allPredictions2, probs = c(0, 0.25, 0.5, 0.75, 1), na.rm = TRUE)
-labels_values <- format(breaks_values, digits = 4, nsmall = 2)
-
-ggplot() + 
-    geom_sf(data = joined_fishnet_den, aes(fill = factor(ntile(allPredictions2, 5))), colour = NA) +
-    geom_sf(data = denver_fishnet, color = "grey", fill = NA) +
-    scale_fill_manual(values = c("#eff3ff", "#bdd7e7", "#bcaecc", "#5a4565", "#3e204f"),
-                      labels = labels_values,
-                      name = "Predicted Probabilities (%)") +
-    labs(title = "Predicted Probability of Flood Inundation in Denver, Colorado") +
-    mapTheme
-
-
-breaks <- quantile(joined_fishnet_den$allPredictions2, probs = seq(0, 1, 0.25), na.rm = TRUE)
-labels <- formatC(breaks, format = "f", digits = 2)  # Use formatC for more control over formatting
-
-ggplot() + 
-    geom_sf(data = joined_fishnet_den, aes(fill = factor(ntile(allPredictions2, 5))), colour = NA) +  # Raster layer
-    geom_sf(data = denver_fishnet, color = "grey", fill = NA) +  # Denver fishnet overlay
-    scale_fill_manual(
-      values = c("#eff3ff", "#bdd7e7", "#bcaecc", "#5a4565", "#3e204f"),  # Slightly revised for clearer color progression
-      labels = labels,  # Use formatted labels for clarity
-      name = "Predicted\nProbabilities(%)\n(Quintile\nBreaks)"
-    ) +
-    labs(title = "Predicted Probability of Flood Inundation in Denver, Colorado") +
-  mapTheme
-
-
-quantile_breaks <- quantile(joined_fishnet_den$allPredictions2, probs = seq(0, 1, by = 0.2), na.rm = TRUE)
-# Create custom labels based on these breaks
-custom_labels <- sprintf("%.2f - %.2f", head(quantile_breaks, -1), tail(quantile_breaks, -1))
-
-ggplot() + 
-    geom_sf(data = joined_fishnet_den, aes(fill = factor(ntile(allPredictions2, 5))), colour = NA) +
-    geom_sf(data = denver_fishnet, color = "grey", fill = NA) +
-    scale_fill_manual(
-      values = c("#eff3ff", "#bdd7e7", "#bcaecc", "#5a4565", "#3e204f"),  # Your color choices
-      labels = custom_labels,  # Use the custom labels based on quantile breaks
-      name = "Predicted\nProbabilities(%)\n(Quintile\nBreaks)"
-    ) +
-    labs(title = "Predicted Probability of Flood Inundation in Denver, Colorado") +
-  mapTheme
-  # Or any other theme or customization you prefer
-
-
-
-
 ```
 
