@@ -94,7 +94,6 @@ land_use <- read.csv("https://raw.githubusercontent.com/luyiiw/LUEM/main/calgary
 slope <- read.csv("https://raw.githubusercontent.com/luyiiw/LUEM/main/calgary_table/zonal_slope.csv")
 
 water_body <- read.csv("https://raw.githubusercontent.com/luyiiw/LUEM/main/calgary_table/zonal_water.csv")
-
 ```
 
 # 2: Exploratory Analysis
@@ -302,7 +301,6 @@ mapTheme
 
 ggplot() +
   geom_raster(data = cal_dem_df, aes(x = x, y = y, fill = calgary_dem)) + 
-  geom_sf(data = calgary_fishnet, color = "grey", fill = NA) +  
     scale_fill_viridis_c(name = "Elevation (m)", na.value = "transparent")+  
   coord_sf() +  
   labs(title = "Elevation in Calgary, Canada") +  
@@ -393,7 +391,6 @@ highest_value_den <- 1754
 
 ggplot() +
   geom_raster(data = den_dem_df, aes(x = x, y = y, fill = den_dem)) +
-  geom_sf(data = denver_fishnet, color = "grey", fill = NA) +
   scale_fill_viridis_c(name = "Elevation (m)",
                        na.value = "transparent",
                        limits = c(lowest_value_den, highest_value_den), 
