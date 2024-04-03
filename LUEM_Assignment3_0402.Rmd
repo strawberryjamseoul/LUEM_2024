@@ -187,8 +187,8 @@ ggplot(floodPlotVariables %>%
 ```
 
 
-# Model Building 
-## Partition Training and Test Sets
+# 3: Model Building 
+## 3.1: Partition Training and Test Sets
 ```{r}
 # Combine all data sets for model building
 model_data <- flood_dep %>%
@@ -214,7 +214,7 @@ floodTest  <- model_data[-trainIndex,]
 ```
 
 
-## Making the Binomial Model
+## 3.2: Making the Binomial Model
 ```{r}
 floodModel <- glm(flood ~ ., 
                     family="binomial"(link="logit"), data = floodTrain %>%
@@ -223,7 +223,7 @@ floodModel <- glm(flood ~ .,
 summary(floodModel)
 ```
 
-## Model Validation
+## 3.3: Model Validation
 ```{r}
 classProbs <- predict(floodModel, floodTest, type="response")
 
@@ -247,8 +247,8 @@ ggplot(testProbs, aes(x = pred, fill=as.factor(obs))) +
   plotTheme
 ```
 
-## Confusion Matrix
-```{r}
+## 3.4: Confusion Matrix
+```{r confusion_matrix}
 testProbs$predClass  = ifelse(testProbs$pred > .5 ,1,0)
 
 caret::confusionMatrix(reference = as.factor(testProbs$obs), 
@@ -268,8 +268,7 @@ Sensitivity: 0.63
 Specificity: 0.92
 
 
-## ROC Curve
-
+## 3.5: ROC Curve
 ```{r roc_curve, message = FALSE, warning = FALSE}
 # change obs to numeric
 testProbs$obs <- as.numeric(as.character(testProbs$obs))
@@ -288,8 +287,8 @@ auc(testProbs$obs, testProbs$pred)
 ```
 Area under the curve: 0.85
 
-## Cross-Validation
-```{r}
+## 3.6: Cross-Validation
+```{r cross_validation}
 ctrl <- trainControl(method = "cv", 
                      number = 100, 
                      p = 0.7, 
@@ -315,7 +314,7 @@ ggplot(as.data.frame(cvFit$resample), aes(Accuracy)) +
 Accuracy: 0.86
 Kappa: 0.63
 
-## Cross-validation
+## 3.7: Goodness-of-Fit
 ```{r}
 ###Refine here by yujin
 allPredictions <- 
@@ -364,9 +363,9 @@ ggplot() +
 ```
 
 
-# APPLY MODEL TO DENVER
-## Load Data
-```{r load data for Denver}
+# 4: Applying the Model to Denver, Colorado 
+## 4.1: Load Data Denver
+```{r load_data_den}
 # independent variables
 elevation_den <- read.csv("https://raw.githubusercontent.com/luyiiw/LUEM/main/denver_table/Zonal_elevation_den.csv")
 
@@ -380,8 +379,8 @@ water_body_den <- read.csv("https://raw.githubusercontent.com/luyiiw/LUEM/main/d
 
 ```
 
-## Denver data cleaning
-```{r}
+## 4.2: Data Cleaning Denver
+```{r data_cleaning_den}
 #1 Elevation
 elev_comb_den <- elevation_den %>%
   select(FID, MEAN) %>%
@@ -414,7 +413,7 @@ lu_comb_den <- land_use_den %>%
 
 ```
 
-## Model Building Denver
+## 4.3: Model Building Denver
 ```{r}
 # Combine all data sets for DENVER model building
 model_data_den <- elev_comb_den %>%
@@ -428,7 +427,7 @@ model_data_den <- elev_comb_den %>%
 rm(elev_comb_den, slope_comb_den, water_comb_den, fac_comb_den, lu_comb_den)
 ```
 
-## Predicting Flood in Denver
+## 4.4: Predicting Flood in Denver
 ```{r}
 den_classProbs <- predict(floodModel, model_data_den, type = "response")
 
