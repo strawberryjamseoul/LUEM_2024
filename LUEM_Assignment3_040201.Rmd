@@ -203,7 +203,7 @@ floodPlotVariables <-
 
 ```
 
-```{r variable_maps, warning = FALSE, include=FALSE, message = FALSE}
+```{r variable_maps,  message = FALSE, warning = FALSE}
 library(raster)
 #Inundation Calgary
 dependent <- raster("C:/Users/USER/Desktop/LandUseModeling/Assignment3/calgary_raster/dependent.tif")
