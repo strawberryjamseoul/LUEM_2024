@@ -738,5 +738,11 @@ ggplot() +
 Our team believes that building a predictive flood model can be very helpful in guiding planning and policy decisions. We find that our current model performs well in predicting flooding in Calgary. However, we would suggest adjusting the model to increase its sensitivity. Moreover, we found that the model might not generalize well across cities. We suggest looking into engineering other variables, such as climate and rainfall features, that could improve the model's performance. 
 
 
-# 7: Video Presentation
+
+# 7: Data Source
+Land cover data for Calgary and Denver, specifically regarding permeability and distance from water body, were sourced from the Multi-Resolution Land Characteristics Consortium  [(MRLC)](https://www.mrlc.gov/data.). Additionally, the Digital Elevation Model (DEM) for Calgary was obtained from the United States Geological Survey [(USGS)](https://data.usgs.gov/datacatalog/ with the dataset identifier 77ae0551-c61e-4979-aedd-d797abdcde0e.).
+
+
+
+# 8: Video Presentation
 To access our team's 4-minute presentation briefly discussing this project, [click here](https://youtu.be/4oc8fMTeCb4).
